@@ -11,6 +11,12 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.myapplication.data.AppDatabase;
+import com.example.myapplication.data.Event;
+import com.example.myapplication.data.EventRepository;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -23,10 +29,16 @@ public class EditEventActivity extends AppCompatActivity {
     private String selectedDate = "";
     private String selectedTime = "";
 
+    private EventRepository repository;
+    private Event currentEvent;
+    private int eventId = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_event);
+
+        repository = new EventRepository(AppDatabase.getInstance(this).eventDao());
 
         etEventTitle = findViewById(R.id.etEventTitle);
         etEventDescription = findViewById(R.id.etEventDescription);
@@ -42,6 +54,14 @@ public class EditEventActivity extends AppCompatActivity {
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         tvSelectedTime = findViewById(R.id.tvSelectedTime);
 
+        eventId = getIntent().getIntExtra("event_id", -1);
+
+        if (eventId == -1) {
+            Toast.makeText(this, "Invalid event", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         loadExistingEventData();
 
         btnSelectDate.setOnClickListener(v -> showDatePicker());
@@ -51,35 +71,39 @@ public class EditEventActivity extends AppCompatActivity {
     }
 
     private void loadExistingEventData() {
-        if (getIntent() != null) {
-            String title = getIntent().getStringExtra("event_title");
-            String description = getIntent().getStringExtra("event_description");
-            String location = getIntent().getStringExtra("event_location");
-            String category = getIntent().getStringExtra("event_category");
-            String priority = getIntent().getStringExtra("event_priority");
-            String date = getIntent().getStringExtra("event_date");
-            String time = getIntent().getStringExtra("event_time");
-
-            if (title != null) etEventTitle.setText(title);
-            if (description != null) etEventDescription.setText(description);
-            if (location != null) etEventLocation.setText(location);
-            if (category != null) etEventCategory.setText(category);
-            if (priority != null) etEventPriority.setText(priority);
-
-            if (date != null && !date.isEmpty()) {
-                selectedDate = date;
-                tvSelectedDate.setText(date);
+        repository.getEventById(eventId, event -> runOnUiThread(() -> {
+            if (event == null) {
+                Toast.makeText(EditEventActivity.this, "Event not found", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
             }
 
-            if (time != null && !time.isEmpty()) {
-                selectedTime = time;
-                tvSelectedTime.setText(time);
-            }
-        }
+            currentEvent = event;
+
+            etEventTitle.setText(event.title);
+            etEventDescription.setText(event.description != null ? event.description : "");
+            etEventLocation.setText(event.location != null ? event.location : "");
+            etEventCategory.setText(event.category != null ? event.category : "");
+            etEventPriority.setText(getPriorityLabel(event.priority));
+
+            selectedDate = formatDateOnly(event.dateTime);
+            selectedTime = formatTimeOnly(event.dateTime);
+
+            tvSelectedDate.setText(selectedDate);
+            tvSelectedTime.setText(selectedTime);
+        }));
     }
 
     private void showDatePicker() {
         Calendar calendar = Calendar.getInstance();
+
+        if (!TextUtils.isEmpty(selectedDate)) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                calendar.setTime(sdf.parse(selectedDate));
+            } catch (Exception ignored) {
+            }
+        }
 
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -108,6 +132,14 @@ public class EditEventActivity extends AppCompatActivity {
     private void showTimePicker() {
         Calendar calendar = Calendar.getInstance();
 
+        if (!TextUtils.isEmpty(selectedTime)) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                calendar.setTime(sdf.parse(selectedTime));
+            } catch (Exception ignored) {
+            }
+        }
+
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
 
@@ -124,18 +156,23 @@ public class EditEventActivity extends AppCompatActivity {
                 },
                 hour,
                 minute,
-                false
+                true
         );
 
         timePickerDialog.show();
     }
 
     private void updateEvent() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String title = etEventTitle.getText().toString().trim();
         String description = etEventDescription.getText().toString().trim();
         String location = etEventLocation.getText().toString().trim();
         String category = etEventCategory.getText().toString().trim();
-        String priority = etEventPriority.getText().toString().trim();
+        String priorityText = etEventPriority.getText().toString().trim();
 
         if (TextUtils.isEmpty(title)) {
             etEventTitle.setError("Title is required");
@@ -153,18 +190,76 @@ public class EditEventActivity extends AppCompatActivity {
             return;
         }
 
-        // Later replace this with real database update code
-        String message = "Event Updated:\n"
-                + "Title: " + title + "\n"
-                + "Description: " + description + "\n"
-                + "Location: " + location + "\n"
-                + "Category: " + category + "\n"
-                + "Priority: " + priority + "\n"
-                + "Date: " + selectedDate + "\n"
-                + "Time: " + selectedTime;
+        long dateTimeMillis = convertToMillis(selectedDate, selectedTime);
+        if (dateTimeMillis == -1) {
+            Toast.makeText(this, "Invalid date/time", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        if (TextUtils.isEmpty(category)) {
+            category = "Personal";
+        }
 
+        int priority = getPriorityValue(priorityText);
+
+        currentEvent.title = title;
+        currentEvent.description = TextUtils.isEmpty(description) ? null : description;
+        currentEvent.location = TextUtils.isEmpty(location) ? null : location;
+        currentEvent.category = category;
+        currentEvent.priority = priority;
+        currentEvent.dateTime = dateTimeMillis;
+
+        repository.update(currentEvent);
+
+        Toast.makeText(this, "Event updated", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private long convertToMillis(String date, String time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm", Locale.getDefault());
+        try {
+            return sdf.parse(date + " " + time).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    private String formatDateOnly(long timeMillis) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        return sdf.format(timeMillis);
+    }
+
+    private String formatTimeOnly(long timeMillis) {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        return sdf.format(timeMillis);
+    }
+
+    private int getPriorityValue(String priorityText) {
+        if (priorityText.equalsIgnoreCase("High")) {
+            return 3;
+        } else if (priorityText.equalsIgnoreCase("Medium")) {
+            return 2;
+        } else if (priorityText.equalsIgnoreCase("Low")) {
+            return 1;
+        }
+
+        try {
+            return Integer.parseInt(priorityText);
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    private String getPriorityLabel(int priority) {
+        if (priority == 3) {
+            return "High";
+        } else if (priority == 2) {
+            return "Medium";
+        } else if (priority == 1) {
+            return "Low";
+        } else {
+            return String.valueOf(priority);
+        }
     }
 }

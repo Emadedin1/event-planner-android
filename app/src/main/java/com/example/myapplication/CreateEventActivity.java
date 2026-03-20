@@ -11,6 +11,12 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.myapplication.data.AppDatabase;
+import com.example.myapplication.data.Event;
+import com.example.myapplication.data.EventRepository;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -23,10 +29,14 @@ public class CreateEventActivity extends AppCompatActivity {
     private String selectedDate = "";
     private String selectedTime = "";
 
+    private EventRepository repository;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_event);
+
+        repository = new EventRepository(AppDatabase.getInstance(this).eventDao());
 
         etEventTitle = findViewById(R.id.etEventTitle);
         etEventDescription = findViewById(R.id.etEventDescription);
@@ -94,7 +104,7 @@ public class CreateEventActivity extends AppCompatActivity {
                 },
                 hour,
                 minute,
-                false
+                true
         );
 
         timePickerDialog.show();
@@ -105,7 +115,7 @@ public class CreateEventActivity extends AppCompatActivity {
         String description = etEventDescription.getText().toString().trim();
         String location = etEventLocation.getText().toString().trim();
         String category = etEventCategory.getText().toString().trim();
-        String priority = etEventPriority.getText().toString().trim();
+        String priorityText = etEventPriority.getText().toString().trim();
 
         if (TextUtils.isEmpty(title)) {
             etEventTitle.setError("Title is required");
@@ -123,20 +133,59 @@ public class CreateEventActivity extends AppCompatActivity {
             return;
         }
 
-        // For now, just confirm the event was "saved"
-        // Later, replace this with database/repository insert code
-        String message = "Event Saved:\n"
-                + "Title: " + title + "\n"
-                + "Description: " + description + "\n"
-                + "Location: " + location + "\n"
-                + "Category: " + category + "\n"
-                + "Priority: " + priority + "\n"
-                + "Date: " + selectedDate + "\n"
-                + "Time: " + selectedTime;
+        long dateTimeMillis = convertToMillis(selectedDate, selectedTime);
+        if (dateTimeMillis == -1) {
+            Toast.makeText(this, "Invalid date/time", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        if (TextUtils.isEmpty(category)) {
+            category = "Personal";
+        }
 
-        // Optional: close screen after save
+        int priority = getPriorityValue(priorityText);
+
+        Event event = new Event(
+                title,
+                TextUtils.isEmpty(description) ? null : description,
+                dateTimeMillis,
+                category,
+                priority,
+                TextUtils.isEmpty(location) ? null : location,
+                null,
+                false,
+                System.currentTimeMillis()
+        );
+
+        repository.insert(event);
+
+        Toast.makeText(this, "Event saved", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private long convertToMillis(String date, String time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm", Locale.getDefault());
+        try {
+            return sdf.parse(date + " " + time).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    private int getPriorityValue(String priorityText) {
+        if (priorityText.equalsIgnoreCase("High")) {
+            return 3;
+        } else if (priorityText.equalsIgnoreCase("Medium")) {
+            return 2;
+        } else if (priorityText.equalsIgnoreCase("Low")) {
+            return 1;
+        }
+
+        try {
+            return Integer.parseInt(priorityText);
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 }
