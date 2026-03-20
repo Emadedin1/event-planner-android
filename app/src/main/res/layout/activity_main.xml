@@ -1,31 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp">
+    android:padding="12dp">
 
     <TextView
-        android:id="@+id/tvMainTitle"
-        android:layout_width="wrap_content"
+        android:id="@+id/dashboardText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Event Planner"
-        android:textSize="28sp"
+        android:text="Upcoming Events: 0"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
+        android:padding="6dp" />
 
-    <Button
-        android:id="@+id/btnOpenCreateEvent"
+    <EditText
+        android:id="@+id/searchInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Open Create Event"
-        android:layout_marginBottom="16dp" />
+        android:hint="Search events..." />
 
-    <Button
-        android:id="@+id/btnOpenEditEvent"
+    <Spinner
+        android:id="@+id/categorySpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Spinner
+        android:id="@+id/statusSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Spinner
+        android:id="@+id/sortSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="8dp" />
+
+    <TextView
+        android:id="@+id/emptyState"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Open Edit Event" />
+        android:text="No events found"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:visibility="gone"
+        android:padding="16dp" />
 
 </LinearLayout>
