@@ -15,6 +15,10 @@ public class EventRepository {
         void onResult(Event event);
     }
 
+    public interface InsertCallback {
+        void onInserted(long id);
+    }
+
     public EventRepository(EventDao dao) {
         this.dao = dao;
         this.ioExecutor = Executors.newSingleThreadExecutor();
@@ -23,6 +27,13 @@ public class EventRepository {
 
     public void insert(Event event) {
         ioExecutor.execute(() -> dao.insert(event));
+    }
+
+    public void insertWithCallback(Event event, InsertCallback callback) {
+        ioExecutor.execute(() -> {
+            long id = dao.insert(event);
+            callback.onInserted(id);
+        });
     }
 
     public void update(Event event) {

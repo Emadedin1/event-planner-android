@@ -13,7 +13,7 @@ import java.util.List;
 @Dao
 public interface EventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(Event event);
+    long insert(Event event);
 
     @Update
     void update(Event event);

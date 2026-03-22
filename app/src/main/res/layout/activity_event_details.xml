@@ -59,5 +59,26 @@
             android:text="Description"
             android:paddingTop="14dp" />
 
+        <Button
+            android:id="@+id/btnBackDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnEditEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Event"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnDeleteEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete Event"
+            android:layout_marginBottom="12dp" />
+
     </LinearLayout>
 </ScrollView>
