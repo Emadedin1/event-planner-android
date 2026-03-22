@@ -102,6 +102,20 @@
             android:text="No time selected"
             android:layout_marginBottom="24dp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notifications"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <Button
+            android:id="@+id/btnNotificationSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notification Settings"
+            android:layout_marginBottom="12dp" />
+
         <Button
             android:id="@+id/btnSaveEvent"
             android:layout_width="match_parent"

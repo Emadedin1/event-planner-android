@@ -23,11 +23,12 @@ import java.util.Locale;
 public class CreateEventActivity extends AppCompatActivity {
 
     private EditText etEventTitle, etEventDescription, etEventLocation, etEventCategory, etEventPriority;
-    private Button btnSelectDate, btnSelectTime, btnSaveEvent, btnCancelEvent;
+    private Button btnSelectDate, btnSelectTime, btnSaveEvent, btnCancelEvent, btnNotificationSettings;
     private TextView tvSelectedDate, tvSelectedTime;
 
     private String selectedDate = "";
     private String selectedTime = "";
+    private Long selectedReminderTime = null;
 
     private EventRepository repository;
 
@@ -48,6 +49,7 @@ public class CreateEventActivity extends AppCompatActivity {
         btnSelectTime = findViewById(R.id.btnSelectTime);
         btnSaveEvent = findViewById(R.id.btnSaveEvent);
         btnCancelEvent = findViewById(R.id.btnCancelEvent);
+        btnNotificationSettings = findViewById(R.id.btnNotificationSettings);
 
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         tvSelectedTime = findViewById(R.id.tvSelectedTime);
@@ -56,6 +58,25 @@ public class CreateEventActivity extends AppCompatActivity {
         btnSelectTime.setOnClickListener(v -> showTimePicker());
         btnSaveEvent.setOnClickListener(v -> saveEvent());
         btnCancelEvent.setOnClickListener(v -> finish());
+        btnNotificationSettings.setOnClickListener(v -> notificationSettings());
+    }
+
+    private void notificationSettings() {
+        NotificationSettingsDialog dialog = new NotificationSettingsDialog();
+        dialog.setOnReminderSetListener(new NotificationSettingsDialog.OnReminderSetListener() {
+            @Override
+            public void onReminderConfirmed(long reminderTimeMillis) {
+                selectedReminderTime = reminderTimeMillis;
+                Toast.makeText(CreateEventActivity.this, "Reminder set", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onReminderDisabled() {
+                selectedReminderTime = null;
+                Toast.makeText(CreateEventActivity.this, "Reminder disabled", Toast.LENGTH_SHORT).show();
+            }
+        });
+        dialog.show(getSupportFragmentManager(), "notif_settings");
     }
 
     private void showDatePicker() {
@@ -152,12 +173,19 @@ public class CreateEventActivity extends AppCompatActivity {
                 category,
                 priority,
                 TextUtils.isEmpty(location) ? null : location,
-                null,
+                selectedReminderTime,
                 false,
                 System.currentTimeMillis()
         );
 
-        repository.insert(event);
+        if (selectedReminderTime != null) {
+            repository.insertWithCallback(event, id -> {
+                event.id = (int) id;
+                ReminderScheduler.scheduleReminder(getApplicationContext(), event);
+            });
+        } else {
+            repository.insert(event);
+        }
 
         Toast.makeText(this, "Event saved", Toast.LENGTH_SHORT).show();
         finish();
