@@ -49,12 +49,10 @@ public class NotificationSettingsDialog extends DialogFragment {
         Button btnConfirm = view.findViewById(R.id.btnConfirmReminder);
         Button btnCancel = view.findViewById(R.id.btnCancelReminder);
 
-        // Toggle shows/hides date and time options
         switchEnableReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
             layoutReminderOptions.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
 
-        // Date picker
         btnSelectDate.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
@@ -72,7 +70,6 @@ public class NotificationSettingsDialog extends DialogFragment {
                     }, year, month, day).show();
         });
 
-        // Time picker
         btnSelectTime.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -88,7 +85,6 @@ public class NotificationSettingsDialog extends DialogFragment {
                     }, hour, minute, true).show();
         });
 
-        // Confirm button
         btnConfirm.setOnClickListener(v -> {
             if (!switchEnableReminder.isChecked()) {
                 if (listener != null) listener.onReminderDisabled();
@@ -121,7 +117,6 @@ public class NotificationSettingsDialog extends DialogFragment {
             dismiss();
         });
 
-        // Cancel button
         btnCancel.setOnClickListener(v -> dismiss());
 
         return new androidx.appcompat.app.AlertDialog.Builder(requireContext())
