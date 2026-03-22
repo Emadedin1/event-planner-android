@@ -9,6 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.content.Intent;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
@@ -37,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner categorySpinner;
     private Spinner statusSpinner;
     private Spinner sortSpinner;
+    private Button btnAddEvent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +81,13 @@ public class MainActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         };
+
+        btnAddEvent = findViewById(R.id.btnAddEvent);
+
+        btnAddEvent.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CreateEventActivity.class);
+            startActivity(intent);
+        });
 
         categorySpinner.setOnItemSelectedListener(spinnerListener);
         statusSpinner.setOnItemSelectedListener(spinnerListener);

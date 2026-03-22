@@ -49,12 +49,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         holder.category.setText("Category: " + currentEvent.category);
         holder.date.setText("Date: " + formatDate(currentEvent.dateTime));
 
-        if (currentEvent.isCompleted) {
-            holder.status.setText("Completed");
-        } else {
-            holder.status.setText("Pending");
-        }
-
         holder.priority.setText("Priority: " + getPriorityLabel(currentEvent.priority));
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -76,7 +70,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         TextView title;
         TextView category;
         TextView date;
-        TextView status;
         TextView priority;
 
         public ViewHolder(@NonNull View itemView) {
@@ -84,7 +77,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             title = itemView.findViewById(R.id.title);
             category = itemView.findViewById(R.id.category);
             date = itemView.findViewById(R.id.date);
-            status = itemView.findViewById(R.id.status);
             priority = itemView.findViewById(R.id.priority);
         }
     }
