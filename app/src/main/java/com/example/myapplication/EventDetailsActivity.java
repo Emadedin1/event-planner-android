@@ -26,7 +26,6 @@ public class EventDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_details);
 
-
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Event Details");
@@ -56,6 +55,7 @@ public class EventDetailsActivity extends AppCompatActivity {
                     .setPositiveButton("Delete", (dialog, which) -> {
                         repository.getEventById(eventId, event -> {
                             if (event != null) {
+                                ReminderScheduler.cancelReminder(EventDetailsActivity.this, eventId);
                                 repository.delete(event);
                                 runOnUiThread(() -> {
                                     Toast.makeText(EventDetailsActivity.this, "Event deleted", Toast.LENGTH_SHORT).show();

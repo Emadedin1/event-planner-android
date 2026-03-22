@@ -23,11 +23,12 @@ import java.util.Locale;
 public class EditEventActivity extends AppCompatActivity {
 
     private EditText etEventTitle, etEventDescription, etEventLocation, etEventCategory, etEventPriority;
-    private Button btnSelectDate, btnSelectTime, btnUpdateEvent, btnCancelEdit;
+    private Button btnSelectDate, btnSelectTime, btnUpdateEvent, btnCancelEdit, btnNotificationSettings;
     private TextView tvSelectedDate, tvSelectedTime;
 
     private String selectedDate = "";
     private String selectedTime = "";
+    private Long selectedReminderTime = null;
 
     private EventRepository repository;
     private Event currentEvent;
@@ -50,6 +51,7 @@ public class EditEventActivity extends AppCompatActivity {
         btnSelectTime = findViewById(R.id.btnSelectTime);
         btnUpdateEvent = findViewById(R.id.btnUpdateEvent);
         btnCancelEdit = findViewById(R.id.btnCancelEdit);
+        btnNotificationSettings = findViewById(R.id.btnNotificationSettings);
 
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         tvSelectedTime = findViewById(R.id.tvSelectedTime);
@@ -68,6 +70,7 @@ public class EditEventActivity extends AppCompatActivity {
         btnSelectTime.setOnClickListener(v -> showTimePicker());
         btnUpdateEvent.setOnClickListener(v -> updateEvent());
         btnCancelEdit.setOnClickListener(v -> finish());
+        btnNotificationSettings.setOnClickListener(v -> notificationSettings());
     }
 
     private void loadExistingEventData() {
@@ -79,6 +82,7 @@ public class EditEventActivity extends AppCompatActivity {
             }
 
             currentEvent = event;
+            selectedReminderTime = event.reminderTime;
 
             etEventTitle.setText(event.title);
             etEventDescription.setText(event.description != null ? event.description : "");
@@ -92,6 +96,24 @@ public class EditEventActivity extends AppCompatActivity {
             tvSelectedDate.setText(selectedDate);
             tvSelectedTime.setText(selectedTime);
         }));
+    }
+
+    private void notificationSettings() {
+        NotificationSettingsDialog dialog = new NotificationSettingsDialog();
+        dialog.setOnReminderSetListener(new NotificationSettingsDialog.OnReminderSetListener() {
+            @Override
+            public void onReminderConfirmed(long reminderTimeMillis) {
+                selectedReminderTime = reminderTimeMillis;
+                Toast.makeText(EditEventActivity.this, "Reminder updated", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onReminderDisabled() {
+                selectedReminderTime = null;
+                Toast.makeText(EditEventActivity.this, "Reminder disabled", Toast.LENGTH_SHORT).show();
+            }
+        });
+        dialog.show(getSupportFragmentManager(), "notif_settings");
     }
 
     private void showDatePicker() {
@@ -208,8 +230,10 @@ public class EditEventActivity extends AppCompatActivity {
         currentEvent.category = category;
         currentEvent.priority = priority;
         currentEvent.dateTime = dateTimeMillis;
+        currentEvent.reminderTime = selectedReminderTime;
 
         repository.update(currentEvent);
+        ReminderScheduler.rescheduleReminder(this, currentEvent);
 
         Toast.makeText(this, "Event updated", Toast.LENGTH_SHORT).show();
         finish();
